@@ -1,0 +1,33 @@
+version: 2
+
+models:
+  - name: sample_table_1
+    primary_key: arg_1
+    columns:
+      - name: arg_1
+        tests:
+          - unique
+          - not_null
+      - name: arg_2
+        tests:
+          - not_null
+      - name: arg_3
+        tests:
+          - not_null
+          - relationships:
+              to: ref('sample_table_2')
+              field: arg_1
+  - name: sample_table_2
+    primary_key: arg_1
+    columns:
+      - name: arg_1
+        tests:
+          - unique
+          - not_null
+  - name: sample_table_3
+    primary_key: arg_1,arg_2
+    tests:
+    - dbt_utils.unique_combination_of_columns:
+        combination_of_columns:
+          - arg_1
+          - arg_2
