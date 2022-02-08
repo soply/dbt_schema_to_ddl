@@ -97,11 +97,6 @@ def get_ddl_foreign_keys(schema_name, table_data):
     List of strs
         List of ddl foreign key constraints to add for this table
     """
-
-    """ALTER TABLE orders
-    ADD CONSTRAINT fk_orders_customers FOREIGN KEY (customer_id) REFERENCES customers (id);
-
-    """
     ddl_statements = []
     table_name = table_data.get("name", None)
     if table_name:
@@ -115,7 +110,7 @@ def get_ddl_foreign_keys(schema_name, table_data):
                     destination_column = tests['relationships']['field']
                     ddl_statement = (f"ALTER TABLE { schema_name }.{ table_name } ADD CONSTRAINT "
                                      f"fk_{ schema_name }_{ table_name }_{ column['name'] }_{ destination_table }_{ destination_column } "
-                                     f"FOREIGN KEY { column['name'] } REFERENCES { schema_name }.{ destination_table } ({ destination_column });")
+                                     f"FOREIGN KEY ({ column['name'] }) REFERENCES { schema_name }.{ destination_table } ({ destination_column });")
                     ddl_statements.append(ddl_statement)
         return ddl_statements
     else:
