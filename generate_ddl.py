@@ -1,5 +1,6 @@
 import yaml
 import argparse
+import sys
 
 def get_ddl_primary_key(schema_name, table_data):
     """ Extracts primary key and returns the DDL messages as a string.
@@ -161,7 +162,7 @@ def process_schema(in_file, schema_name):
     return ddl_statements
 
 
-def write_ddl_to_file(in_file, out_file, schema_name):
+def write_ddl_to_file(in_file, out_file, schema_name, include_fks):
     """ Writes DDL statements from given in_file (dbt schema file)
     to the specified out file. Uses given schema_name for all DDL statements
 
@@ -173,6 +174,8 @@ def write_ddl_to_file(in_file, out_file, schema_name):
         Path to output file (should be some *.sql file)
     schema_name : str
         Target schema name
+    include_fks : bool
+        Whether or not to include DDLs for foreign keys
     """
     ddl_statements = process_schema(in_file, schema_name)
     ddl_text = ""
@@ -186,14 +189,15 @@ def write_ddl_to_file(in_file, out_file, schema_name):
         for ddl_statement in val['uniqueness']:
              ddl_text += ddl_statement + '\n'
         ddl_text += '\n\n'
-    ddl_text += f"-- Adding foreign key ddl statements \n\n"
-    for key, val in ddl_statements.items():
-        if len(val['foreign_keys']) == 0:
-            continue
-        ddl_text += f"-- Processing table {key}\n\n"
-        for ddl_statement in val['foreign_keys']:
-             ddl_text += ddl_statement + '\n'
-        ddl_text += '\n\n'
+    if include_fks:
+        ddl_text += f"-- Adding foreign key ddl statements \n\n"
+        for key, val in ddl_statements.items():
+            if len(val['foreign_keys']) == 0:
+                continue
+            ddl_text += f"-- Processing table {key}\n\n"
+            for ddl_statement in val['foreign_keys']:
+                ddl_text += ddl_statement + '\n'
+            ddl_text += '\n\n'
     
     with open(out_file, 'w') as fout:
         fout.write(ddl_text)
@@ -205,8 +209,18 @@ parser.add_argument('out_file', type=str,
                     help='Path to output file (dbt schema file)')
 parser.add_argument('target_schema', type=str,
                     help='Target schema against which to run DDL statements')
+parser.add_argument('--include_fk', type=str,
+                    help='Boolean (y/n) to indicate whether to add DDLs for foreign keys', default="y", required=False)
 args = parser.parse_args()
 
-write_ddl_to_file(args.in_file, args.out_file, args.target_schema)
+if args.include_fk == 'y':
+    include_fks = True
+elif args.include_fk == 'n':
+    include_fks = False
+else:
+    parser.print_help()
+    sys.exit()
+
+write_ddl_to_file(args.in_file, args.out_file, args.target_schema, include_fks)
 
 
